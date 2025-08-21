@@ -617,6 +617,74 @@ body {
     to { transform: rotate(360deg); }
 }
 
+/* Mobile Warning Overlay */
+.mobile-warning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.mobile-warning.show {
+    display: flex;
+}
+
+.mobile-warning-content {
+    background: #2d2d2d;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 400px;
+    text-align: center;
+    border: 2px solid #444;
+}
+
+.mobile-warning-content h2 {
+    color: #ffb74d;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.mobile-warning-content p {
+    color: #e0e0e0;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.mobile-warning-content ul {
+    text-align: left;
+    color: #e0e0e0;
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+.mobile-warning-content li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.continue-mobile-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.2s;
+}
+
+.continue-mobile-btn:hover {
+    background: color-mix(in srgb, var(--primary-color) 85%, black);
+}
+
 .github-links {
     margin-top: 12px;
     display: flex;

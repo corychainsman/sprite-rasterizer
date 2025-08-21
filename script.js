@@ -158,11 +158,43 @@ function checkBrowserCompatibility() {
     return true;
 }
 
-// Initialize the application
-async function init() {
-    statusText.textContent = 'Initializing...';
+// Mobile/small screen detection
+function isMobileOrSmallScreen() {
+    // Check screen width
+    if (window.innerWidth < 1024) {
+        return true;
+    }
     
-    // Check browser compatibility first
+    // Check for touch device
+    if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
+        return true;
+    }
+    
+    // Check user agent for mobile indicators
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'tablet', 'phone'];
+    
+    return mobileKeywords.some(keyword => userAgent.includes(keyword));
+}
+
+// Show mobile warning overlay
+function showMobileWarning() {
+    const mobileWarning = document.getElementById('mobile-warning');
+    const continueBtn = document.getElementById('continue-mobile');
+    
+    mobileWarning.classList.add('show');
+    
+    // Allow user to continue anyway
+    continueBtn.addEventListener('click', () => {
+        mobileWarning.classList.remove('show');
+        // Continue with normal initialization
+        continueWithInitialization();
+    });
+}
+
+// Continue initialization after mobile warning
+async function continueWithInitialization() {
+    // Check browser compatibility
     if (!checkBrowserCompatibility()) {
         return;
     }
@@ -190,6 +222,20 @@ async function init() {
         showError('Failed to initialize core functionality: ' + error.message);
         statusText.textContent = 'Initialization failed';
     }
+}
+
+// Initialize the application
+async function init() {
+    statusText.textContent = 'Initializing...';
+    
+    // Check for mobile/small screen first
+    if (isMobileOrSmallScreen()) {
+        showMobileWarning();
+        return;
+    }
+    
+    // Continue with normal initialization
+    await continueWithInitialization();
 }
 
 // Webcam initialization with user feedback
