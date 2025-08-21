@@ -33,7 +33,7 @@ body {
 
 .main-container {
     display: flex;
-    height: calc(100vh - 120px);
+    height: calc(100vh);
 }
 
 .sidebar {
@@ -56,7 +56,7 @@ body {
 }
 
 .controls {
-    width: 240px;
+    width: 200px;
     background: #252525;
     border-left: 1px solid #404040;
     padding: 20px;
@@ -64,6 +64,9 @@ body {
 }
 
 .sprite-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     padding: 20px;
     border-bottom: 1px solid #404040;
 }
@@ -77,8 +80,31 @@ body {
 .sprite-gallery {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-auto-rows: min-content;
+    gap: 4px;
     margin-bottom: 16px;
+    height: 150px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.sprite-gallery::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sprite-gallery::-webkit-scrollbar-track {
+    background: #333;
+    border-radius: 3px;
+}
+
+.sprite-gallery::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.sprite-gallery::-webkit-scrollbar-thumb:hover {
+    background: #666;
 }
 
 .sprite-item {
@@ -525,6 +551,70 @@ body {
     border-radius: 3px;
     font-size: 12px;
     margin-bottom: 8px;
+}
+
+.webcam-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.camera-permission-status {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.camera-permission-status.info {
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    color: #64b5f6;
+}
+
+.camera-permission-status.requesting {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffb74d;
+}
+
+.camera-permission-status.error {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #e57373;
+}
+
+.permission-message {
+    margin-bottom: 6px;
+}
+
+.permission-retry-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.permission-retry-btn:hover {
+    background: color-mix(in srgb, var(--primary-color) 85%, black);
+}
+
+.permission-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 4px auto 0;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .capture-modal {

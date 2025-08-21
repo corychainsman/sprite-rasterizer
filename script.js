@@ -180,18 +180,10 @@ async function init() {
             handleTextSpritesInput({ target: textInput });
         }
         
-        // Try webcam initialization separately - don't let it block core functionality
-        try {
-            await initWebcam();
-            // Ensure all webcam elements are mirrored after initialization
-            mirrorAllWebcamElements();
-            statusText.textContent = 'Ready - Add at least 2 characters or sprite images to begin';
-            // showSuccess('Application initialized successfully');
-        } catch (webcamError) {
-            console.warn('Webcam initialization failed:', webcamError);
-            statusText.textContent = 'Ready - Add at least 2 characters or sprite images to begin (webcam unavailable)';
-            showWarning('Webcam unavailable - you can still upload images and use static images');
-        }
+        statusText.textContent = 'Ready - Add at least 2 characters or sprite images to begin';
+        
+        // Initialize webcam in background without blocking
+        initWebcamWithFeedback();
         
     } catch (error) {
         console.error('Core initialization failed:', error);
@@ -200,7 +192,48 @@ async function init() {
     }
 }
 
-// Webcam initialization
+// Webcam initialization with user feedback
+async function initWebcamWithFeedback() {
+    
+    try {
+        // Update UI to show we're detecting cameras
+        webcamSelect.innerHTML = '<option>Detecting cameras...</option>';
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length === 0) {
+            updateWebcamSelectForError('No cameras found');
+            showCameraPermissionUI('No cameras detected on this device');
+            return;
+        }
+        
+        updateWebcamSelect(videoDevices);
+        
+        // Show permission request notice
+        showCameraPermissionUI('Requesting camera access...', 'requesting');
+        
+        // Small delay to show the permission request message
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        await startWebcam();
+        
+        // Success - hide permission UI, ensure webcam UI state is correct
+        hideCameraPermissionUI();
+        mirrorAllWebcamElements();
+        
+        // Ensure UI shows webcam is active (hide reset button, show webcam)
+        webcam.classList.remove('hidden');
+        resetSource.classList.add('hidden');
+        
+        // showToast('Camera access granted', 'success');
+        
+    } catch (error) {
+        handleWebcamError(error);
+    }
+}
+
+// Legacy webcam initialization (kept for compatibility)
 async function initWebcam() {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -215,7 +248,7 @@ async function initWebcam() {
         }
     } catch (error) {
         if (error.name === 'NotAllowedError') {
-            throw new Error('Camera permission denied - Click here to learn how to enable');
+            throw new Error('Camera permission denied');
         } else if (error.name === 'NotFoundError') {
             throw new Error('No camera detected');
         } else if (error.name === 'NotReadableError') {
@@ -226,6 +259,47 @@ async function initWebcam() {
     }
 }
 
+// Handle webcam errors with appropriate user feedback
+function handleWebcamError(error) {
+    console.warn('Webcam initialization failed:', error);
+    
+    let message = 'Camera unavailable';
+    let actionButton = null;
+    
+    if (error.name === 'NotAllowedError') {
+        message = 'Camera permission denied';
+        actionButton = {
+            text: 'Request Permission Again',
+            action: requestCameraPermissionAgain
+        };
+    } else if (error.name === 'NotFoundError') {
+        message = 'No camera detected';
+    } else if (error.name === 'NotReadableError') {
+        message = 'Camera in use by another app';
+        actionButton = {
+            text: 'Try Again',
+            action: initWebcamWithFeedback
+        };
+    } else if (error.name === 'NotSupportedError') {
+        message = 'Camera not supported in this browser';
+    } else {
+        message = 'Camera error: ' + error.message;
+        actionButton = {
+            text: 'Try Again',
+            action: initWebcamWithFeedback
+        };
+    }
+    
+    updateWebcamSelectForError(message);
+    showCameraPermissionUI(message, 'error', actionButton);
+}
+
+// Request camera permission again
+async function requestCameraPermissionAgain() {
+    showCameraPermissionUI('Requesting camera access...', 'requesting');
+    await initWebcamWithFeedback();
+}
+
 function updateWebcamSelect(devices) {
     webcamSelect.innerHTML = '';
     devices.forEach((device, index) => {
@@ -234,6 +308,51 @@ function updateWebcamSelect(devices) {
         option.textContent = device.label || `Camera ${index + 1}`;
         webcamSelect.appendChild(option);
     });
+}
+
+function updateWebcamSelectForError(message) {
+    webcamSelect.innerHTML = `<option disabled>${message}</option>`;
+    webcamSelect.disabled = true;
+}
+
+// Camera permission UI management
+function showCameraPermissionUI(message, type = 'info', actionButton = null) {
+    // Find or create permission status element
+    let permissionStatus = document.getElementById('camera-permission-status');
+    if (!permissionStatus) {
+        permissionStatus = document.createElement('div');
+        permissionStatus.id = 'camera-permission-status';
+        permissionStatus.className = 'camera-permission-status';
+        
+        // Insert after the webcam select
+        const webcamControls = document.querySelector('.webcam-controls');
+        webcamControls.appendChild(permissionStatus);
+    }
+    
+    permissionStatus.className = `camera-permission-status ${type}`;
+    
+    let content = `<div class="permission-message">${message}</div>`;
+    
+    if (actionButton) {
+        content += `<button class="permission-retry-btn" onclick="${actionButton.action.name}()">${actionButton.text}</button>`;
+    }
+    
+    if (type === 'requesting') {
+        content += '<div class="permission-spinner"></div>';
+    }
+    
+    permissionStatus.innerHTML = content;
+    permissionStatus.style.display = 'block';
+}
+
+function hideCameraPermissionUI() {
+    const permissionStatus = document.getElementById('camera-permission-status');
+    if (permissionStatus) {
+        permissionStatus.style.display = 'none';
+    }
+    
+    // Re-enable webcam select
+    webcamSelect.disabled = false;
 }
 
 async function startWebcam(deviceId) {
@@ -431,10 +550,11 @@ async function loadStaticImage(file) {
 }
 
 function resetToWebcam() {
-    // staticImage.classList.toggle('hidden');
-    webcam.classList.toggle('hidden');
+    // Show webcam, hide static image source
+    webcam.classList.remove('hidden');
+    // staticImage.classList.add('hidden');
     // sourceStatus.textContent = '🎥 Webcam';
-    resetSource.classList.toggle('hidden');
+    resetSource.classList.add('hidden'); // Hide reset button when using webcam
     staticImage.src = '';
     
     // Clear thumbnail preview in drop zone
@@ -636,7 +756,7 @@ async function addSprite(file) {
                 sprite.normalizedWidth = img.width;
                 sprite.normalizedHeight = img.height;
                 updateDefaultGridSize();
-                showSuccess(`First sprite dimensions: ${img.width}x${img.height}`);
+                // showSuccess(`First sprite dimensions: ${img.width}x${img.height}`);
             } else {
                 // Normalize to first sprite dimensions
                 const firstSprite = allSprites[0];
@@ -644,7 +764,7 @@ async function addSprite(file) {
                 sprite.normalizedHeight = firstSprite.normalizedHeight;
                 
                 if (img.width !== firstSprite.normalizedWidth || img.height !== firstSprite.normalizedHeight) {
-                    showSuccess(`Sprite resized to match first sprite: ${firstSprite.normalizedWidth}x${firstSprite.normalizedHeight}`);
+                    // showSuccess(`Sprite resized to match first sprite: ${firstSprite.normalizedWidth}x${firstSprite.normalizedHeight}`);
                 }
             }
             
@@ -704,7 +824,7 @@ function updateSpriteGallery() {
     });
     
     // Add empty slots up to 32
-    for (let i = imageSprites.length; i < Math.min(32, imageSprites.length + 6); i++) {
+    for (let i = imageSprites.length; i < Math.min(32, imageSprites.length + 1); i++) {
         const item = document.createElement('div');
         item.className = 'sprite-item empty';
         item.innerHTML = '+';
@@ -713,6 +833,11 @@ function updateSpriteGallery() {
     }
     
     updateSpritesMessage();
+    
+    // Auto-scroll to bottom to show the newest sprite
+    setTimeout(() => {
+        spriteGallery.scrollTop = spriteGallery.scrollHeight;
+    }, 10);
 }
 
 function updateSpritesMessage() {
@@ -802,7 +927,7 @@ function clearAllSprites() {
         updateTotalSpriteCount();
         stopRendering();
         statusText.textContent = 'Add at least 2 characters or sprite images to begin';
-        showSuccess('All sprites cleared');
+        // showSuccess('All sprites cleared');
         
         // Clear text input
         document.getElementById('text-sprites').value = '';
@@ -1045,7 +1170,7 @@ function setupCaptureModal() {
                     try {
                         const file = new File([blob], 'captured-sprite.png', { type: 'image/png' });
                         await addSprite(file);
-                        showSuccess('Sprite captured successfully!');
+                        // showSuccess('Sprite captured successfully!');
                     } catch (error) {
                         showError('Failed to save captured sprite: ' + error.message);
                     }
@@ -1133,12 +1258,76 @@ async function handleSpriteCapture() {
         return;
     }
     
-    // Open the capture modal instead of direct capture
-    if (window.openCaptureModal) {
-        window.openCaptureModal();
-    } else {
-        showError('Capture modal not available');
+    // Capture directly without modal
+    await captureFrameDirectly();
+}
+
+// Direct capture function that works with the main webcam feed
+async function captureFrameDirectly() {
+    try {
+        // Create a temporary canvas for capture
+        const canvas = document.createElement('canvas');
+        const video = webcam; // Use the main webcam element
+        
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Create mirrored context for webcam capture
+        const ctx = createMirroredCanvasContext(video, canvas);
+        
+        // Draw current video frame (will be mirrored)
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Restore context
+        restoreCanvasContext(ctx);
+        
+        // Normalize to first sprite dimensions if needed
+        const allSprites = getAllSprites();
+        if (allSprites.length > 0) {
+            const firstSprite = allSprites[0];
+            const normalizedCanvas = document.createElement('canvas');
+            const normalizedCtx = normalizedCanvas.getContext('2d');
+            
+            normalizedCanvas.width = firstSprite.normalizedWidth;
+            normalizedCanvas.height = firstSprite.normalizedHeight;
+            
+            normalizedCtx.drawImage(canvas, 0, 0, normalizedCanvas.width, normalizedCanvas.height);
+            
+            // Replace capture canvas content
+            canvas.width = normalizedCanvas.width;
+            canvas.height = normalizedCanvas.height;
+            const finalCtx = canvas.getContext('2d');
+            finalCtx.drawImage(normalizedCanvas, 0, 0);
+        }
+        
+        // Save the captured frame as a sprite
+        await saveCanvasAsSprite(canvas);
+        
+        showSuccess('Sprite captured successfully!');
+        
+    } catch (error) {
+        showError('Failed to capture sprite: ' + error.message);
     }
+}
+
+// Helper function to save a canvas as a sprite
+async function saveCanvasAsSprite(canvas) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    const file = new File([blob], 'captured-sprite.png', { type: 'image/png' });
+                    await addSprite(file);
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                }
+            } else {
+                reject(new Error('Failed to create image blob'));
+            }
+        });
+    });
 }
 
 //==============================================================================
@@ -1816,14 +2005,14 @@ function actuallyStartRendering() {
     // Prefer webcam if available, otherwise keep static image visible
     if (webcamStream && webcam.srcObject) {
         // We have a working webcam - use it for live video
-        webcam.classList.toggle('hidden');  // Show webcam
-        // staticImage.classList.toggle('hidden'); // Hide static image
+        webcam.classList.remove('hidden');  // Show webcam
+        // staticImage.classList.add('hidden'); // Hide static image
         // sourceStatus.textContent = '🎥 Webcam';
-        resetSource.classList.toggle('hidden'); // Hide reset button
+        resetSource.classList.add('hidden'); // Hide reset button
     } else {
         // No webcam - use static image (test pattern)
-        webcam.classList.toggle('hidden');     // Hide webcam
-        // staticImage.classList.toggle('hidden'); // Show static image
+        webcam.classList.add('hidden');     // Hide webcam
+        // staticImage.classList.remove('hidden'); // Show static image
     }
     
     // Update texture atlas

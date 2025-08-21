@@ -6,14 +6,12 @@
     <title>Sprite Rasterizer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="header">
-        <h1>Sprite Rasterizer</h1>
-    </div>
-    
+<body>    
     <div class="main-container">
         <div class="sidebar">
             <div class="sprite-section">
+                <p>Text and image sprites are combined.</p>
+                <div>
                 <h3>TextSprites</h3>
                 <div id="sprites-message"></div>
                 
@@ -28,13 +26,14 @@
                         </div>
                     </div>
                 </div>
-                
+            </div>
+            <div>
                 <h3>Image Sprites</h3>
                 <div class="sprite-gallery" id="sprite-gallery">
                 </div>
                 <div class="sprite-upload">
                     <input type="file" id="sprite-upload" accept="image/*" multiple style="display: none;">
-                    <button class="upload-button" onclick="document.getElementById('sprite-upload').click()">
+                    <button class="upload-button hidden" onclick="document.getElementById('sprite-upload').click()">
                         📁 Upload Sprites
                     </button>
                     <button class="capture-button" id="capture-sprite">
@@ -44,6 +43,7 @@
                         🗑️ Clear All
                     </button>
                 </div>
+            </div>
             </div>
             
             <div class="webcam-controls">
