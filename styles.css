@@ -617,6 +617,32 @@ body {
     to { transform: rotate(360deg); }
 }
 
+.github-links {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.github-link {
+    display: inline-block;
+    color: #64b5f6;
+    text-decoration: none;
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: 3px;
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.github-link:hover {
+    background: rgba(33, 150, 243, 0.2);
+    border-color: rgba(33, 150, 243, 0.5);
+    color: #90caf9;
+}
+
 .capture-modal {
     position: fixed;
     top: 0;
