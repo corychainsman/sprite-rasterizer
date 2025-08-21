@@ -4,7 +4,7 @@ A real-time webcam sprite rasterizer that converts live video feeds into ASCII-a
 
 ## Demo
 
-https://github.com/user-attachments/assets/sprite-rasterizer.mp4
+https://github.com/user-attachments/assets/5a1063e3-e87f-49fb-9e7f-85739df26242
 
 ## Features
 
