@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Rasterizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Sprite Rasterizer</h1>
+    </div>
+    
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sprite-section">
+                <h3>TextSprites</h3>
+                <div id="sprites-message"></div>
+                
+                <div class="text-sprite-input">
+                    <div class="input-with-button">
+                        <input type="text" id="text-sprites" class="text-input" placeholder="Enter characters/emojis" value="🌕🌖🌗🌘🌑🌒🌓🌔">
+                        <button id="emoji-picker-btn" class="emoji-picker-btn">😀</button>
+                    </div>
+                    <div id="emoji-picker" class="emoji-picker hidden">
+                        <div class="emoji-grid" id="emoji-grid">
+                            <!-- Emojis will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Image Sprites</h3>
+                <div class="sprite-gallery" id="sprite-gallery">
+                </div>
+                <div class="sprite-upload">
+                    <input type="file" id="sprite-upload" accept="image/*" multiple style="display: none;">
+                    <button class="upload-button" onclick="document.getElementById('sprite-upload').click()">
+                        📁 Upload Sprites
+                    </button>
+                    <button class="capture-button" id="capture-sprite">
+                        📷 Capture from Webcam
+                    </button>
+                    <button class="reset-button" id="clear-all-sprites">
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <div class="webcam-controls">
+                <h3 style="margin-bottom: 12px; font-size: 14px;">Camera</h3>
+                <select id="webcam-select" class="webcam-select">
+                    <option>Detecting cameras...</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <!-- <video id="webcam" class="webcam-preview" autoplay muted playsinline></video> -->
+            <img id="static-image" class="webcam-preview hidden" />
+            <canvas id="output-canvas" class="canvas hidden"></canvas>
+            
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h4>Source</h4>
+                <!-- <div id="source-status">🎥 Webcam</div> -->
+                <button id="reset-source" class="reset-button hidden">Reset to Webcam</button>
+                <video id="webcam" class="webcam-preview" autoplay muted playsinline></video>
+
+                <!-- <div class="checkbox-container"> -->
+                    <!-- <input type="checkbox" id="show-video-overlay" checked> -->
+                    <!-- <label for="show-video-overlay">Show video overlay</label> -->
+                <!-- </div> -->
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <div class="drop-zone-icon">📁</div>
+                        <div class="drop-zone-text">Drop input image here</div>
+                        <div class="drop-zone-subtext">or click to browse</div>
+                    </div>
+                    <div id="drop-zone-preview" class="drop-zone-preview">
+                        <img id="drop-zone-image" src="" alt="Preview">
+                        <button id="drop-zone-remove" class="drop-zone-remove">×</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Background</span>
+                    </div>
+                    <input type="color" id="canvas-bg-color" class="color-picker" value="#808080">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Text color</span>
+                    </div>
+                    <input type="color" id="text-color" class="color-picker" value="#000000">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h4>Scale</h4>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Grid Scale</span>
+                        <span id="scale-value">3.5x</span>
+                    </div>
+                    <input type="range" id="scale" class="slider" min="0.1" max="5.0" step="0.1" value="3.5">
+                </div>
+                <div style="font-size: 11px; color: #999; margin-top: 8px;">
+                    Grid: <span id="grid-display">0x0 (0 sprites)</span>
+                </div>
+            </div>
+            
+            
+            <div class="control-group">
+                <h4>Threshold</h4>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Posterization Intensity</span>
+                        <span id="threshold-value">0.00</span>
+                    </div>
+                    <input type="range" id="threshold" class="slider" min="0" max="1" step="0.01" value="0">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h4>Matching Algorithm</h4>
+                <div class="radio-group">
+                    <div class="radio-container">
+                        <input type="radio" id="match-color" name="matching" value="color">
+                        <label for="match-color">Color</label>
+                    </div>
+                    <div class="radio-container">
+                        <input type="radio" id="match-brightness" name="matching" value="brightness" checked>
+                        <label for="match-brightness">Brightness</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h4>Performance</h4>
+                <div class="performance">
+                    <div>FPS: <span id="fps-counter">0</span></div>
+                    <div>Loaded: <span id="sprite-count">0</span> sprites</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-bar">
+        <div id="status-text">Loading...</div>
+        <div>Right-click canvas to save image</div>
+    </div>
+
+    <!-- Sprite Capture Modal -->
+    <div id="capture-modal" class="capture-modal">
+        <div class="capture-content">
+            <h3>Capture Sprite from Webcam</h3>
+            <video id="capture-video" class="capture-preview" autoplay muted playsinline></video>
+            <canvas id="capture-canvas" class="capture-preview hidden"></canvas>
+            <div id="countdown" class="countdown hidden"></div>
+            <div class="capture-controls">
+                <button id="start-capture" class="capture-btn">Capture (3s countdown)</button>
+                <button id="instant-capture" class="capture-btn">Capture Now</button>
+                <button id="close-capture" class="cancel-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
