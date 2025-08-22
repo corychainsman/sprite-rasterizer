@@ -37,6 +37,7 @@ const canvasBgColor = document.getElementById('canvas-bg-color');
 const textColor = document.getElementById('text-color');
 const spritesMessage = document.getElementById('sprites-message');
 const webcamSelect = document.getElementById('webcam-select');
+const webcamControls = document.querySelector('.webcam-controls');
 
 // Control panel elements
 const scale = document.getElementById('scale');
@@ -158,42 +159,11 @@ function checkBrowserCompatibility() {
     return true;
 }
 
-// Mobile/small screen detection
-function isMobileOrSmallScreen() {
-    // Check screen width
-    if (window.innerWidth < 1024) {
-        return true;
-    }
-    
-    // Check for touch device
-    if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
-        return true;
-    }
-    
-    // Check user agent for mobile indicators
-    const userAgent = navigator.userAgent.toLowerCase();
-    const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'tablet', 'phone'];
-    
-    return mobileKeywords.some(keyword => userAgent.includes(keyword));
-}
 
-// Show mobile warning overlay
-function showMobileWarning() {
-    const mobileWarning = document.getElementById('mobile-warning');
-    const continueBtn = document.getElementById('continue-mobile');
+// Initialize the application
+async function init() {
+    statusText.textContent = 'Initializing...';
     
-    mobileWarning.classList.add('show');
-    
-    // Allow user to continue anyway
-    continueBtn.addEventListener('click', () => {
-        mobileWarning.classList.remove('show');
-        // Continue with normal initialization
-        continueWithInitialization();
-    });
-}
-
-// Continue initialization after mobile warning
-async function continueWithInitialization() {
     // Check browser compatibility
     if (!checkBrowserCompatibility()) {
         return;
@@ -224,55 +194,40 @@ async function continueWithInitialization() {
     }
 }
 
-// Initialize the application
-async function init() {
-    statusText.textContent = 'Initializing...';
-    
-    // Check for mobile/small screen first
-    if (isMobileOrSmallScreen()) {
-        showMobileWarning();
-        return;
-    }
-    
-    // Continue with normal initialization
-    await continueWithInitialization();
-}
-
-// Webcam initialization with user feedback
+// Simplified webcam initialization with mobile device support
 async function initWebcamWithFeedback() {
-    
     try {
-        // Update UI to show we're detecting cameras
-        webcamSelect.innerHTML = '<option>Detecting cameras...</option>';
-        
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        
-        if (videoDevices.length === 0) {
-            updateWebcamSelectForError('No cameras found');
-            showCameraPermissionUI('No cameras detected on this device');
-            return;
-        }
-        
-        updateWebcamSelect(videoDevices);
-        
-        // Show permission request notice
+        // Update UI to show we're requesting camera access
+        webcamSelect.innerHTML = '<option>Requesting camera access...</option>';
         showCameraPermissionUI('Requesting camera access...', 'requesting');
         
-        // Small delay to show the permission request message
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Try to start webcam with basic constraints first
+        await startWebcamSimple();
         
-        await startWebcam();
+        // Success - try to get available devices for selection
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput' && device.deviceId);
+            
+            if (videoDevices.length > 1) {
+                // Multiple cameras found - show webcam controls
+                updateWebcamSelect(videoDevices);
+                webcamControls.style.display = 'block';
+            } else {
+                // Single camera detected - hide entire webcam controls section
+                webcamControls.style.display = 'none';
+            }
+        } catch (enumError) {
+            // Device enumeration failed but camera is working - hide webcam controls
+            console.warn('Device enumeration failed:', enumError);
+            webcamControls.style.display = 'none';
+        }
         
-        // Success - hide permission UI, ensure webcam UI state is correct
+        // Hide permission UI and update display
         hideCameraPermissionUI();
         mirrorAllWebcamElements();
-        
-        // Ensure UI shows webcam is active (hide reset button, show webcam)
         webcam.classList.remove('hidden');
         resetSource.classList.add('hidden');
-        
-        // showToast('Camera access granted', 'success');
         
     } catch (error) {
         handleWebcamError(error);
@@ -354,11 +309,13 @@ function updateWebcamSelect(devices) {
         option.textContent = device.label || `Camera ${index + 1}`;
         webcamSelect.appendChild(option);
     });
+    webcamControls.style.display = 'block'; // Ensure webcam controls are visible for multiple cameras
 }
 
 function updateWebcamSelectForError(message) {
     webcamSelect.innerHTML = `<option disabled>${message}</option>`;
     webcamSelect.disabled = true;
+    webcamControls.style.display = 'block'; // Show webcam controls for error messages
 }
 
 // Camera permission UI management
@@ -401,6 +358,64 @@ function hideCameraPermissionUI() {
     webcamSelect.disabled = false;
 }
 
+// Simplified webcam start function for mobile compatibility
+async function startWebcamSimple() {
+    if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Use basic video constraints that work well on mobile
+    const constraints = {
+        video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user' // Prefer front camera on mobile
+        }
+    };
+
+    webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+    webcam.srcObject = webcamStream;
+    
+    // Also set up capture video if it exists and modal is open
+    const captureVideo = document.getElementById('capture-video');
+    const captureModal = document.getElementById('capture-modal');
+    if (captureVideo && captureModal && captureModal.classList.contains('active')) {
+        captureVideo.srcObject = webcamStream;
+    }
+    
+    // Mirror all webcam elements
+    mirrorAllWebcamElements();
+}
+
+// Start webcam with facing mode (for mobile camera switching)
+async function startWebcamWithFacingMode(facingMode) {
+    if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+    }
+
+    const constraints = {
+        video: {
+            facingMode: facingMode,
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+        }
+    };
+
+    webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+    webcam.srcObject = webcamStream;
+    
+    // Also set up capture video if it exists and modal is open
+    const captureVideo = document.getElementById('capture-video');
+    const captureModal = document.getElementById('capture-modal');
+    if (captureVideo && captureModal && captureModal.classList.contains('active')) {
+        captureVideo.srcObject = webcamStream;
+    }
+    
+    // Mirror all webcam elements
+    mirrorAllWebcamElements();
+}
+
+// Original webcam start function with device selection
 async function startWebcam(deviceId) {
     if (webcamStream) {
         webcamStream.getTracks().forEach(track => track.stop());
@@ -408,7 +423,9 @@ async function startWebcam(deviceId) {
 
     const constraints = {
         video: {
-            deviceId: deviceId ? { exact: deviceId } : undefined
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            width: { ideal: 640 },
+            height: { ideal: 480 }
         }
     };
 
@@ -435,7 +452,26 @@ function initEventListeners() {
     
     // Webcam controls
     webcamSelect.addEventListener('change', async (e) => {
-        await startWebcam(e.target.value);
+        try {
+            const value = e.target.value;
+            if (value === 'user' || value === 'environment') {
+                // Use facingMode for mobile camera switching
+                await startWebcamWithFacingMode(value);
+            } else if (value && value !== 'Camera Active') {
+                // Use specific device ID
+                await startWebcam(value);
+            } else {
+                // Fallback to simple webcam start
+                await startWebcamSimple();
+            }
+        } catch (error) {
+            console.warn('Webcam selection failed, falling back to simple mode:', error);
+            try {
+                await startWebcamSimple();
+            } catch (fallbackError) {
+                handleWebcamError(fallbackError);
+            }
+        }
     });
     
     
@@ -625,6 +661,40 @@ function updateTextColor() {
         handleTextSpritesInput({ target: textInput });
     }
 }
+
+// Handle mobile warning dismiss functionality
+document.addEventListener('DOMContentLoaded', () => {
+    const continueBtn = document.getElementById('continue-mobile');
+    const mobileWarning = document.getElementById('mobile-warning');
+    let userDismissedWarning = false;
+        
+    if (continueBtn && mobileWarning) {
+        continueBtn.addEventListener('click', () => {
+            userDismissedWarning = true;
+            mobileWarning.classList.add('dismissed');
+        });
+    }
+    
+    // Check screen size and show/hide warning accordingly
+    function checkScreenSize() {
+        if (mobileWarning) {
+            if (window.innerWidth < 550) {
+                // Screen is small - show warning unless user dismissed it
+                if (!userDismissedWarning) {
+                    mobileWarning.classList.remove('dismissed');
+                }
+            } else {
+                // Screen is large - always hide warning and reset dismissal state
+                userDismissedWarning = false;
+            }
+        }
+    }
+    
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Check initial screen size when page loads
+    checkScreenSize();
+});
 
 //==============================================================================
 // EMOJI PICKER FUNCTIONALITY

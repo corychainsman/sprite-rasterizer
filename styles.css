@@ -1,8 +1,44 @@
 :root {
+    --screen-size-warning-width: 550px;
+
     --primary-color: #2196F3;
     --error-color: #f44336;
     --success-color: #4CAF50;
     --warning-color: #ff9800;
+
+    --primary-text: color-mix(in srgb, var(--primary-color) 88%, white);
+    --primary-btn-bg: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    --primary-btn-border: solid 1px color-mix(in srgb, var(--primary-color) 32%, transparent);
+    --primary-btn-bg-hover: color-mix(in srgb, var(--primary-color) 32%, transparent);
+
+    --error-text: color-mix(in srgb, var(--error-color) 88%, white);
+    --error-btn-bg: color-mix(in srgb, var(--error-color) 12%, transparent);
+    --error-btn-border: solid 1px color-mix(in srgb, var(--error-color) 32%, transparent);
+    --error-btn-bg-hover: color-mix(in srgb, var(--error-color) 32%, transparent);
+
+}
+
+.button {
+    background: var(--primary-btn-bg);
+    color: var(--primary-text);
+    border: var(--primary-btn-border);
+    cursor: pointer;
+    font-size: 12px;
+    text-align: center;
+    padding: 8px;
+    border-radius: 4px;
+}
+.button:hover {
+    background: var(--primary-btn-bg-hover);
+}
+
+.negative-button {
+    background: var(--error-btn-bg);
+    color: var(--error-text);
+    border: var(--error-btn-border);
+}
+.negative-button:hover {
+    background: var(--error-btn-bg-hover);
 }
 
 * {
@@ -37,12 +73,23 @@ body {
 }
 
 .sidebar {
-    width: 280px;
+    width: 200px;
     background: #252525;
     border-right: 1px solid #404040;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    padding: 20px 0;
+}
+
+.sidebar > div {
+    padding: 0 20px;
+}
+
+.sidebar h3 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: #e0e0e0;
 }
 
 .canvas-container {
@@ -68,13 +115,6 @@ body {
     flex-direction: column;
     gap: 16px;
     padding: 20px;
-    border-bottom: 1px solid #404040;
-}
-
-.sprite-section h3 {
-    margin-bottom: 16px;
-    font-size: 16px;
-    color: #e0e0e0;
 }
 
 .sprite-gallery {
@@ -159,27 +199,27 @@ body {
     gap: 8px;
 }
 
-.upload-button, .capture-button {
-    background: var(--primary-color);
+/* .upload-button, .capture-button {
+    background: var(--primary-btn-bg);
     color: white;
     border: none;
     padding: 8px 12px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
-}
+} */
 
-.capture-button {
+/* .capture-button {
     background: #2196F3;
-}
+} */
 
-.upload-button:hover {
+/* .upload-button:hover {
     background: color-mix(in srgb, var(--primary-color) 88%, black);
-}
+} */
 
-.capture-button:hover {
+/* .capture-button:hover {
     background: color-mix(in srgb, var(--primary-color) 88%, black);
-}
+} */
 
 .control-group {
     margin-bottom: 24px;
@@ -447,7 +487,7 @@ body {
     margin-bottom: 0;
 }
 
-.emoji-picker-btn {
+/* .emoji-picker-btn {
     background: var(--primary-color);
     border: none;
     border-radius: 4px;
@@ -456,11 +496,11 @@ body {
     cursor: pointer;
     color: white;
     min-width: 44px;
-}
+} */
 
-.emoji-picker-btn:hover {
-    background: #45a049;
-}
+/* .emoji-picker-btn:hover {
+    background: color-mix(in srgb, var(--primary-color) 85%, black);;
+} */
 
 .emoji-picker {
     position: absolute;
@@ -523,19 +563,19 @@ body {
 }
 
 .reset-button {
-    background: var(--error-color);
+    /* background: var(--error-color);
     color: white;
     border: none;
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 12px; */
     margin-bottom: 12px;
 }
 
-.reset-button:hover {
+/* .reset-button:hover {
     background: color-mix(in srgb, var(--error-color) 88%, black);
-}
+} */
 
 .webcam-controls {
     padding: 16px 20px;
@@ -588,7 +628,7 @@ body {
     margin-bottom: 6px;
 }
 
-.permission-retry-btn {
+/* .permission-retry-btn {
     background: var(--primary-color);
     color: white;
     border: none;
@@ -597,11 +637,11 @@ body {
     font-size: 10px;
     cursor: pointer;
     transition: background 0.2s;
-}
+} */
 
-.permission-retry-btn:hover {
+/* .permission-retry-btn:hover {
     background: color-mix(in srgb, var(--primary-color) 85%, black);
-}
+} */
 
 .permission-spinner {
     width: 12px;
@@ -632,8 +672,14 @@ body {
     padding: 20px;
 }
 
-.mobile-warning.show {
-    display: flex;
+@media (max-width: 999px) {
+    .mobile-warning {
+        display: flex !important;
+    }
+    
+    .mobile-warning.dismissed {
+        display: none !important;
+    }
 }
 
 .mobile-warning-content {
@@ -670,20 +716,20 @@ body {
 }
 
 .continue-mobile-btn {
-    background: var(--primary-color);
+    /* background: var(--primary-color);
     color: white;
     border: none;
     padding: 12px 24px;
     border-radius: 6px;
     font-size: 14px;
-    cursor: pointer;
+    cursor: pointer; */
     margin-top: 20px;
-    transition: background 0.2s;
+    /* transition: background 0.2s; */
 }
 
-.continue-mobile-btn:hover {
+/* .continue-mobile-btn:hover {
     background: color-mix(in srgb, var(--primary-color) 85%, black);
-}
+} */
 
 .github-links {
     margin-top: 12px;
@@ -692,24 +738,6 @@ body {
     gap: 6px;
 }
 
-.github-link {
-    display: inline-block;
-    color: #64b5f6;
-    text-decoration: none;
-    font-size: 11px;
-    padding: 4px 6px;
-    border-radius: 3px;
-    background: rgba(33, 150, 243, 0.1);
-    border: 1px solid rgba(33, 150, 243, 0.3);
-    transition: all 0.2s;
-    text-align: center;
-}
-
-.github-link:hover {
-    background: rgba(33, 150, 243, 0.2);
-    border-color: rgba(33, 150, 243, 0.5);
-    color: #90caf9;
-}
 
 .capture-modal {
     position: fixed;
@@ -759,23 +787,23 @@ body {
     margin-top: 16px;
 }
 
-.capture-controls button {
+/* .capture-controls button {
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-}
+} */
 
-.capture-btn {
+/* .capture-btn {
     background: var(--primary-color);
     color: white;
-}
+} */
 
-.cancel-btn {
+/* .cancel-btn {
     background: #666;
     color: white;
-}
+} */
 
 .toast {
     position: fixed;
